@@ -1,0 +1,497 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta content="yes" name="apple-mobile-web-app-capable">      
+<meta content="black" name="apple-mobile-web-app-status-bar-style">
+<title>桌台数据</title>
+<link rel="stylesheet" href="css/work.css">
+</head>
+<body>
+    <div id="app">
+      <div class="selectTool  clearfix">
+      <div class="selectTool-inner">
+      <div class="left tool-left relative width50 tac arrow-info-blue" v-if="hasSubbranch==1" @click="getStoreNameUrl">
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="left tool-left relative width50 tac arrow-info-grey" v-else>
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="right width50 tac arrow-info-blue" @click="getStoreTimeUrl">
+          <span class="toolText textover" v-if="startDate==endDate" v-text="newstartDate"></span>
+          <span class="toolText text-week" v-else>
+            <template v-if="yearTime">
+               <span v-text="newstartDate"></span>-<p v-text="newendDate"></p>
+            </template>
+            <div v-else style="padding-top:5px">
+              <span v-text="newstartDate"></span>-<span v-text="newendDate"></span>
+            </div>
+          </span>
+      </div></div>
+    </div>
+
+
+        <div class="selectResult tableData">
+            <div class=" bgfff">
+
+
+    <template v-for="(item,index) in tableData">
+        <div class="tableDataMenu border-1px relative" v-if="isshow!=index" @click="titleClick(index,item.type,shopGuid,startDate,endDate,timeRange)">
+            <span class="menu menu-l textover">{{item.name}}</span>
+            <span class="menu menu-c">{{item.data}}</span>
+            <span class="menu menu-r">较上{{typeText}}：
+              <p v-if="item.comparison>0" :class="['colred']">
+                <span v-text="item.comparison"></span>%
+              </p>
+              <p v-else-if="item.comparison<0" :class="['colgreen']">
+                <span v-text="item.comparison"></span>%
+              </p>
+              <p v-else>
+                <span>--</span>
+              </p>
+            </span>
+        </div>
+        <div class="mb10 bgfff" v-if="isshow==index">
+          <div class="highcharts-info plr10">
+              <div class="info-left">
+                  <p>{{item.name}}</p>
+                  <p>
+                    <b class="font22 vm col333">
+                      <span>{{item.data}}</span>
+                    </b>
+                  </p>
+              </div>
+              <div class="info-right">
+                <p>较上{{typeText}}：
+                  <span v-if="item.comparison>0" :class="['colred']">
+                    <span v-text="item.comparison"></span>%
+                  </span>
+                  <span v-else-if="item.comparison<0" :class="['colgreen']">
+                    <span v-text="item.comparison"></span>%
+                  </span>
+                  <span v-else>
+                    <span>--</span>
+                  </span>
+                </p>
+                <p>同菜系均值：<span class="col333">{{item.avg}}</span></p>
+              </div>
+          </div>
+        </div>
+         
+      
+        <div v-if="isshow==index" style="padding-top:10px;">
+          <template v-if="index==0">
+              <highcharts :options="typeData1" ref="highcharts" v-if="typeData1" style="height:260px"></highcharts>
+              <!-- <div v-else class="blankdata border-1px relative">暂无数据</div> -->
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==1">
+              <highcharts :options="typeData2" ref="highcharts" v-if="typeData2" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==2">
+              <highcharts :options="typeData3" ref="highcharts" v-if="typeData3" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==3">
+              <highcharts :options="typeData4" ref="highcharts" v-if="typeData4" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==4">
+              <highcharts :options="typeData5" ref="highcharts" v-if="typeData5" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==5">
+              <highcharts :options="typeData6" ref="highcharts" v-if="typeData6" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==6">
+              <highcharts :options="typeData7" ref="highcharts" v-if="typeData7" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==7">
+              <highcharts :options="typeData8" ref="highcharts" v-if="typeData8" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==8">
+              <highcharts :options="typeData9" ref="highcharts" v-if="typeData9" style="height:260px"></highcharts>
+              <div v-if="status==0"  class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==9">
+              <highcharts :options="typeData10" ref="highcharts" v-if="typeData10" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==10">
+              <highcharts :options="typeData11" ref="highcharts" v-if="typeData11" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==11">
+              <highcharts :options="typeData12" ref="highcharts" v-if="typeData12" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==12">
+              <highcharts :options="typeData13" ref="highcharts" v-if="typeData13" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==13">
+              <highcharts :options="typeData14" ref="highcharts" v-if="typeData14" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==14">
+              <highcharts :options="typeData15" ref="highcharts" v-if="typeData15" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==15">
+              <highcharts :options="typeData16" ref="highcharts" v-if="typeData16" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+          <template v-if="index==16">
+              <highcharts :options="typeData17" ref="highcharts" v-if="typeData17" style="height:260px"></highcharts>
+              <div v-if="status==0" class="blankdata border-1px relative">暂无数据</div>
+          </template>
+        </template>
+      
+    </div>
+
+</div>
+</div>
+</div>
+
+<script type="text/javascript" src="js/vue.js"></script>
+<script type="text/javascript" src="js/vue-resource.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/vue-highcharts.js"></script>
+<script type="text/javascript" src="js/fastclick.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+
+<script type="text/javascript">
+Vue.use(VueHighcharts);
+if ('addEventListener' in document) {  
+  document.addEventListener('DOMContentLoaded', function() {  
+    FastClick.attach(document.body);  
+  }, false);  
+} 
+var vm = new Vue({
+      el:'#app',
+      data: {
+        isshow:false,
+        show:false,
+        status:null,
+        tableData:null,
+        onlytableData:null,
+        typeData1:null,
+        typeData2:null,
+        typeData3:null,
+        typeData4:null,
+        typeData5:null,
+        typeData6:null,
+        typeData7:null,
+        typeData8:null,
+        typeData9:null,
+        typeData10:null,
+        typeData11:null,
+        typeData12:null,
+        typeData13:null,
+        typeData14:null,
+        typeData15:null,
+        typeData16:null,
+        typeData17:null,
+        token:"",
+        shopName:"",
+        shopGuid:"",
+        startDate:"",
+        endDate:"",
+        timeRange:"",
+        typeText:"日",
+        hasSubbranch:""
+      },
+      created: function() {
+        this.shopName=GetQueryString("shopName");//获取店铺名称
+        this.startDate=GetQueryString("startDate");
+        this.endDate=GetQueryString("endDate");
+        this.timeRange=GetQueryString("timeRange");
+        this.token=GetQueryString("token");
+        this.shopGuid=GetQueryString("shopGuid"); 
+        this.hasSubbranch=GetQueryString("hasSubbranch");
+
+        this.getCustomers(this.shopGuid,this.startDate,this.endDate,this.timeRange) //获取营业额图表的所有头部数据
+        this.getOnlyData(1,this.shopGuid,this.startDate,this.endDate,this.timeRange)//获取第一个默认图表数据
+         
+      },
+      computed : {
+        yearTime: function () {
+          var value = this.startDate;
+          var year = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+          return parseInt(year) < new Date().getFullYear();
+        },
+        newstartDate:function(){
+            var newdate=new Date().getFullYear();
+            var value=this.startDate;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        },
+        newendDate:function(){
+            var newdate=new Date().getFullYear();
+            var value=this.endDate;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        }
+     },
+    methods: {
+        titleClick:function(index,type,shopGuid,startDate,endDate,timeRange){
+          this.isshow=index;
+          this.getOnlyData(type,shopGuid,startDate,endDate,timeRange)
+        },
+        getCustomers: function(shopGuid,startDate,endDate,timeRange) {//进来时的请求数据
+            this.$http({
+              url:'./shopMaster/operation/tableData',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "shopGuid":shopGuid,   //商家ID
+                "startDate":startDate,
+                "endDate":endDate,
+                "timeRange":timeRange //1：日 2：周 3：月 4：最近30天
+              }
+            }).then(function (response) {
+              if(response.body.code==200){
+                this.tableData = response.body.model;
+              }else{
+                if(response.body.errorCode!=50004){
+                    alert(response.body.message)
+                }
+                return false
+              }
+          })     
+        },
+        getOnlyData: function(type,shopGuid,startDate,endDate,timeRange) {//进来时的请求数据
+            this.typeData1=this.typeData2=this.typeData3=this.typeData4=this.typeData5=this.typeData6=this.typeData7=this.typeData8=this.typeData9=this.typeData10=this.typeData11=this.typeData12=this.typeData13=this.typeData14=this.typeData15=this.typeData16=this.typeData17=null;
+            this.$http({
+              url:'./shopMaster/operation/tableData/detail',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "type":type,
+                "shopGuid":shopGuid,   //商家ID
+                "startDate":startDate,
+                "endDate":endDate,
+                "timeRange":timeRange //1：日 2：周 3：月 4：最近30天 
+              }
+            }).then(function (response) {
+                  if(timeRange==1){
+                    this.typeText="日"
+                  }else if(timeRange==2){
+                    this.typeText="周"
+                  }else if(timeRange==3){
+                    this.typeText="月"
+                  }
+                  var dateArray=[],
+                      dataArray=[],
+                      avgArray=[],
+                      dataArrayAll=0,
+                      avgArrayAll=0;
+                  if(response.body.code!=200){
+                    if(response.body.errorCode!=50004){
+                      alert(response.body.message)
+                    }
+                    return false
+                  }
+                  var tabelName=response.body.model.desc;
+                  var modelObj=response.body.model.details;
+                if(modelObj){
+                  for(var i=0;i<modelObj.length;i++){
+                      dateArray.push(modelObj[i].date);
+                      dataArray.push(modelObj[i].data);
+                      avgArray.push(modelObj[i].avg);
+                      dataArrayAll+=modelObj[i].data;
+                      avgArrayAll+=modelObj[i].avg;
+                  }  
+                  this.onlytableData=modelObj;  
+                  this.status=1;
+                  var setdata= {
+                    title: {
+                      text: ''
+                    },
+                    colors: ['#ffcf00', '#0073ff'],
+                    xAxis: {
+                      categories: dateArray //这个是X轴上的数据展示,
+                    },
+                    yAxis: {
+                      min:1,
+                      startOnTick: false,
+                     tickPosition: 'inside',
+                     lineWidth:0,
+                     labels: {
+                          align: 'left',
+                          x: 0,
+                          y: -2
+                          // format: '{value}'
+                      },
+                      title: {
+                        text: ''
+                      }
+                    },
+                    tooltip: {
+                      pointFormat: '<span style="">{series.name}</span>: '+
+                      '{point.y:,.2f}<br/>',
+                      shared: true,
+                      crosshairs: {
+                          width: 1,
+                          color: '#ccc'
+                      },
+                       style: {
+                          color:"#333"
+                      },
+                      borderColor: '#ff974c'
+                  },
+                   plotOptions: {
+                      areaspline: {
+                           fillOpacity: 0.3,
+                      },
+                      series: {//这个是标记数据点的
+                            marker: {
+                                // enabled: false,
+                                radius:3,
+                                states: {  
+                                    hover: {  
+                                        lineWidth: 1,
+                                        fillColor: '#fff',
+                                        lineWidthPlus: 0
+                                    }  
+                                }  
+                            },
+                            lineWidth:1,
+                            states: {
+                                hover: {
+                                    lineWidthPlus: 0
+                                }
+                            },
+                            fillColor: {
+                                  linearGradient: [0, 0, 0, 200],
+                                  stops: [
+                                      [0, Highcharts.getOptions().colors[0]],
+                                      [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                  ]
+                              }
+                      }
+                  },
+                  credits: {  
+                      enabled: false  
+                  }, 
+                  legend: {
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    symbolPadding:8,
+                      squareSymbol:false,
+                      symbolHeight:10,
+                      symbolWidth: 10,
+                      symbolRadius:0
+                  },
+                  series:[{
+                    "name": tabelName,
+                     "type": "spline",
+                    "data": dataArray
+                     }, {
+                     "name": "同菜系均值",
+                     "type": "areaspline",
+                     "data": avgArray
+                  }]
+                }
+                      if(dataArrayAll==0 && avgArrayAll==0){
+                          console.log("暂无数据")
+                          this.status=0
+                      }else{
+                          if(type==1){
+                            this.typeData1 =setdata;
+                          }else if(type==2){
+                            this.typeData2 =setdata;
+                          }else if(type==3){
+                            this.typeData3 =setdata;
+                          }else if(type==4){
+                            this.typeData4 =setdata;
+                          }else if(type==5){
+                            this.typeData5 =setdata;
+                          }else if(type==6){
+                            this.typeData6 =setdata;
+                          }else if(type==7){
+                            this.typeData7 =setdata;
+                          }else if(type==8){
+                            this.typeData8 =setdata;
+                          }else if(type==9){
+                            this.typeData9 =setdata;
+                          }else if(type==10){
+                            this.typeData10 =setdata;
+                          }else if(type==11){
+                            this.typeData11 =setdata;
+                          }else if(type==12){
+                            this.typeData12 =setdata;
+                          }else if(type==13){
+                            this.typeData13 =setdata;
+                          }else if(type==14){
+                            this.typeData14 =setdata;
+                          }else if(type==15){
+                            this.typeData15 =setdata;
+                          }else if(type==16){
+                            this.typeData16 =setdata;
+                          }else if(type==17){
+                            this.typeData17 =setdata;
+                          }
+                        }
+              }else{
+                this.status=0
+              }
+
+          })
+               
+        },
+      getStoreNameUrl:function(){
+         self.location="baiweiyun://com.operation/changeShop"; 
+      },
+      getStoreNameInner:function(shopGuid,shopName){
+        this.getCustomers(shopGuid,this.startDate,this.endDate,this.timeRange);
+        this.getOnlyData(1,shopGuid,this.startDate,this.endDate,this.timeRange)
+        this.shopGuid=shopGuid;
+        this.shopName=shopName;
+      },
+      getStoreTimeUrl:function(){
+          window.location.href="baiweiyun://com.operation/changeDate?timeRange="+this.timeRange+"&startDate="+this.startDate+"&endDate="+this.endDate; 
+      },
+      getStoreTimeInner:function(startDate,endDate,timeRange){
+        
+        this.startDate=startDate;
+        this.endDate=endDate;
+        this.timeRange=timeRange;
+        // this.show=0;
+        this.getCustomers(this.shopGuid,startDate,endDate,timeRange);
+        // this.getOnlyData(1,this.shopGuid,startDate,endDate,timeRange)
+        // // 
+        // // alert(this.show)
+        this.titleClick(0,1,this.shopGuid,startDate,endDate,timeRange)
+
+      }
+
+    }
+})
+
+function getStoreName(shopGuid,shopName){//修改店铺名称
+  vm.getStoreNameInner(shopGuid,shopName)
+}
+function getStoreTime(startDate,endDate,timeRange){//修改店铺时间
+  vm.getStoreTimeInner(startDate,endDate,timeRange)
+}
+</script>
+</body>
+</html>

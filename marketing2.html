@@ -1,0 +1,564 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta content="yes" name="apple-mobile-web-app-capable">      
+<meta content="black" name="apple-mobile-web-app-status-bar-style">
+<meta content="telephone=no" name="format-detection">
+<title>营销成效</title>
+<link href="css/work.css" rel="stylesheet">
+</head>
+<body>
+<!-- header -->
+<div id="app">
+   
+    <div id="app2" class="border-1px relative activity-head" >
+      <template v-if="bargainCls==1">
+          <div id="firstmin" v-bind:style="{background: imgBgColor}"><p v-text=imgCharacter></p></div>
+      </template>
+      <template v-else-if="bargainCls==2">
+          <div id="firstmin" v-bind:style="{background: imgBgColor}"><p v-text=imgCharacter></p></div>
+      </template>
+      <template v-else>
+          <div id="firstmin" v-bind:style="{background: imgBgColor}"><p v-text= imgCharacter></p></div>
+      </template> 
+
+
+      <div id="firstdetail" class="info-left">
+        <p id="topline" v-text=title></p> 
+        <!-- <span class="shopClass" v-text=startDate></span>&nbsp至&nbsp<span v-text=endDate></span> -->
+        <p class="shopClass"><span v-text=startDate></span>&nbsp至&nbsp<span v-text=endDate></span></p>
+        <p v-text=shopName class="shopClass"></p>
+      </div>
+    </div>
+  <!-- 简介 -->
+    <div id="intro" class="border-1px relative">
+      <p>该活动到目前已进行了<b class="colyellow" v-text=underwayDays></b>天，还有<b class="colyellow" v-text=remainingDays></b>天结束，带来<b class="colyellow" v-text=newCustomer></b>新客，拉动消费￥<b class="colyellow" v-text=amount></b>。</p>
+    </div>
+<!-- 选择日期控件 -->
+ <div id="controlTime" class="relative border-1px">
+      <ul>
+        <li @click="getMarketData(3)" :class="{tapLi: curIndex == 3}" class="dateDefault">近半年</li>
+        <li @click="getMarketData(2)" :class="{tapLi: curIndex == 2}" class="dateDefault">近一月</li>
+        <li @click="getMarketData(1)" :class="{tapLi: curIndex == 1}" class="dateDefault">近七天</li>
+      </ul>
+    </div>
+<!-- 图表A -->
+  <div class="marketData bgfff relat">
+       <highcharts :options="marketData1" v-if="marketData1" ref="highcharts" style="height:260px"></highcharts>
+        <div class="blank blankpat" v-show="isshow1"><span style="position: relative;top: 30px">暂无数据</span></div>
+    </div>
+    <div class="marketData bgfff relat">
+       <highcharts :options="marketData2" v-if="marketData2" ref="highcharts" style="height:260px"></highcharts>
+        <div class="blank blankpat" v-show="isshow2"><span style="position: relative;top: 30px">暂无数据</span></div>
+    </div>
+    <div class="marketData bgfff relat">
+       <highcharts :options="marketData3" v-if="marketData3" ref="highcharts" style="height:260px"></highcharts>
+        <div class="blank blankpat" v-show="isshow3"><span style="position: relative;top: 30px">暂无数据</span></div>
+    </div>
+    <div class="marketData bgfff relat">
+       <highcharts :options="marketData4" v-if="marketData4" ref="highcharts" style="height:200px"></highcharts>
+        <!-- <div class="blank blankpat" v-show="!isshow">暂无数据</div>  -->
+    </div>
+<!-- 异常情况处理 -->
+   <div class="blanks" v-show="isshowAll">暂时没有数据</div>
+<!-- loading -->
+    <div v-show="loading" class="loading-bg">
+        <div class="weui-loading"></div>加载中，请稍后...
+    </div>
+    
+</div>
+       
+<script type="text/javascript" src="js/vue.js"></script>
+<script type="text/javascript" src="js/vue-resource.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/vue-highcharts.js"></script>
+<script type="text/javascript" src="js/fastclick.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+<script>
+ Vue.use(VueHighcharts);
+// 图表所需配置数据项
+var vm = new Vue({
+  el: '#app',
+  data: {
+    curIndex:null,
+    marketData1:null,
+    marketData2:null,
+    marketData3:null,
+    marketData4:null,
+    token:"",
+    shopName:"",
+    shopGuid:"",
+    bargainId:"",
+    status:"",
+    underwayDays:null,         
+    remainingDays:null,         
+    newCustomer:null,         
+    amount:null,
+    imgCharacter:null,
+    imgBgColor:null,
+    title:null,
+    startDate:null,
+    endDate:null,
+    shopName:null,
+    bargainCls:null,
+    isshow1:false,
+    isshow2:false,
+    isshow3:false,
+    isshow:false,
+    isshowAll:false,
+    loading:true
+  },
+  created: function() {
+    this.shopName=GetQueryString("shopName");//获取店铺名称
+    this.token=GetQueryString("token");
+    this.status=GetQueryString("status");
+    this.shopGuid=GetQueryString("shopGuid");
+    this.bargainId=GetQueryString("bargainId");
+    this.bargainCls = localStorage.getItem("bargainCls");
+    this.getMarketData(1)
+  },
+  methods: {
+      getMarketData:function(index){
+        //重置
+        if (this.isshow1) {this.isshow1=!this.isshow1}
+        if (this.isshow2) {this.isshow2=!this.isshow2}
+        if (this.isshow3) {this.isshow3=!this.isshow3}
+
+          this.curIndex=index;
+          console.log(index)
+          this.$http({
+               url:'./shopMaster/activity/efficiency',
+              // url:'http://boss.qa.51eparty.com/shopMaster/activity/efficiency',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "bargainCls":this.bargainCls,
+                "shopGuid":this.shopGuid,
+                "bargainId":this.bargainId,
+                "timeRange":index
+              }
+            }).then(function (response) {
+               // 加载动画
+                this.loading=false;
+                console.log(response.body.model);
+                var model=response.body.model;
+                 var codeData= response.body;
+                // 异常状况的处理
+                if (codeData.code ==500) {
+                   alert(codeData.message);vm.isshowAll=true;
+                 }
+                if (!codeData.model) {vm.isshowAll=true;}  
+
+
+                // 最高值max
+                
+                let activityOrderTop=model.activityOrderTop;//3    
+                let dishSalesTop=model.dishSalesTop; //1
+                let activitySaleTop=model.activitySaleTop;
+                let avgConsumptionTop=model.avgConsumptionTop;    //2
+                          
+                // 头部样式数据
+               this.imgBgColor=localStorage.getItem("imgBgColor");
+               this.imgCharacter = localStorage.getItem("imgCharacter");
+               this.title = localStorage.getItem("title");
+               this.startDate = localStorage.getItem("startDate");
+               this.endDate = localStorage.getItem("endDate");
+               this.shopName = localStorage.getItem("shopName");
+                if(!!model){
+
+                  // 简介所需数据
+                this.underwayDays=model.underwayDays;        
+                this.remainingDays=model.remainingDays;         
+                this.newCustomer=model.newCustomer; 
+                 // 控制显示与否
+                // if (this.newCustomer=='0') {
+                  // this.isshow=true;
+                // } else{this.isshow=false;}
+  
+                this.amount=model.amount;
+
+                // 图表展示遍历数据
+                this.newCustomerOrder=model.dishSales; //加价购菜品销量
+                this.newCustomerSale=model.avgConsumption ;//  单均消费金额 
+                this.newCustomerSaleRate=model.activityOrder;// 活动期间开台数
+                this.disCountRate=model.disCountRate; //优免占比 
+
+                
+                //1加价购菜品销量
+                newCustomerOrderCategories=[];
+                newCustomerOrderData=[];
+                newCustomerOrderAvg=[];
+                dishSalesdataAll=null;
+                for(var i=0;i<model.dishSales.length;i++){
+                    newCustomerOrderCategories.push(model.dishSales[i].date);
+                    newCustomerOrderData.push(model.dishSales[i].data);
+                    newCustomerOrderAvg.push(model.dishSales[i].avg);
+                    dishSalesdataAll+=model.dishSales[i].data
+                }
+                // 图表1显示与否
+                if (!dishSalesdataAll) {this.isshow1=true;}
+
+                //1加价购菜品销量
+                this.marketData1= {
+                      title: {
+                        text: '加价购菜品销量',
+                        style:{fontFamily: 'PingFangSC-Regular',
+                              fontSize: '15px',
+                              color:'#333',
+                              letterSpacing: '0.2px'}
+                      },
+                      chart: {type: 'spline'},
+                      subtitle: {text: '指活动期间日/周/月该促销菜品销售份数',
+                    style:{fontFamily: 'PingFangSC-Light',
+                                fontSize: '12px',
+                                color: '#999',
+                                letterSpacing: '0.17px'}},
+                      xAxis: {
+                        categories:newCustomerOrderCategories
+                      },
+                      yAxis: {
+                        max:dishSalesTop,
+                        min:0,
+                        title:"",
+                        // 区域划分带 区域换分
+                        plotLines: [{   //一条延伸到整个绘图区的线，标志着轴中一个特定值。
+                          color: '#ffc611',
+                          dashStyle: 'Solid', 
+                          width: 1,
+                          value:newCustomerOrderAvg[0],  //y轴显示位置
+                          zIndex: 5,
+                          label: {
+                              text: '非活动期平均日增新客',
+                              verticalAlign: 'bottom',
+                              align:'right',
+                              x:-10,
+                              y:-10,
+                              style: {
+                                  color: '#eca300'
+                              }
+                          }
+                        }],
+                        plotBands: [{
+                              color: '#FCFFC5',
+                              from: 0,
+                              to: newCustomerOrderAvg[0]
+                        }]
+                      },
+                      tooltip: {
+                        xDateFormat: '%Y-%m-%d',
+                        shared: true,
+                        crosshairs: {
+                          width: 1,
+                          color: '#ccc'
+                        },
+                      },
+                     legend: {
+                       enabled: false
+                     },
+                     credits: {  
+                        enabled: false  
+                     },
+                      plotOptions: {   
+                        series: {//这个是标记数据点的
+                          marker: {
+                              enabled:false,
+                              radius:3
+                          },
+                          lineWidth:1
+                        }
+                      },
+                      series: [{
+                        name:'新客开台数',
+                        color: '#5da0f2',
+                        data: newCustomerOrderData
+                      }]
+                      // , {
+                      //   name:'非活动期平均日增新客',
+                      //   type: 'areaspline',
+                      //   data: newCustomerOrderAvg
+                      // }
+                    };
+                //2单均消费金额
+                newCustomerSaleCategories=[];
+                newCustomerSaleData=[];
+                newCustomerSaleAvg=[];
+                avgConsumptiondataAll=null;
+                for(var i=0;i<model.avgConsumption.length;i++){
+                    newCustomerSaleCategories.push(model.avgConsumption[i].date);
+                    newCustomerSaleData.push(model.avgConsumption[i].data);
+                    newCustomerSaleAvg.push(model.avgConsumption[i].avg);
+                    avgConsumptiondataAll+=model.avgConsumption[i].data;
+                }
+                // 图表2显示与否
+
+                 if (!avgConsumptiondataAll) {this.isshow2=true;}
+
+
+                this.marketData2= {
+                      title: {
+                        text: '单均消费金额',
+                        style:{fontFamily: 'PingFangSC-Regular',
+                              fontSize: '15px',
+                              color:'#333',
+                              letterSpacing: '0.2px'}
+                      },
+                      chart: {type: 'spline'},
+                      subtitle: {text: '参与此活动销售总额/参与此活动的开台数',style:{fontFamily: 'PingFangSC-Light',
+                                fontSize: '12px',
+                                color: '#999',
+                                letterSpacing: '0.17px'}},
+                      xAxis: {
+                        categories:newCustomerSaleCategories
+                      },
+                      yAxis: {
+                        max:avgConsumptionTop,
+                        min:0,
+                        title:"",
+                        plotLines: [{   //一条延伸到整个绘图区的线，标志着轴中一个特定值。
+                          color: '#ffc611',
+                          dashStyle: 'Solid', 
+                          width: 1,
+                          value:newCustomerSaleAvg[0],  //y轴显示位置
+                          zIndex: 5,
+                          label: {
+                              text: '非活动期平均销售额',
+                              verticalAlign: 'bottom',
+                              align:'right',
+                              x:-10,
+                              y:-10,
+                              style: {
+                                  color: '#eca300'
+                              }
+                          }
+                        }],
+                        plotBands: [{
+                              color: '#FCFFC5',
+                              from: 0,
+                              to: newCustomerSaleAvg[0]
+                        }]
+                      },
+                      tooltip: {
+                        xDateFormat: '%Y-%m-%d',
+                        shared: true,
+                        crosshairs: {
+                          width: 1,
+                          color: '#ccc'
+                        },
+                      },
+                     legend: {
+                       enabled: false
+                     },
+                     credits: {  
+                        enabled: false  
+                     },
+                     plotOptions: {   
+                        series: {//这个是标记数据点的
+                          marker: {
+                              enabled:false,
+                              radius:3
+                          },
+                          lineWidth:1
+                        }
+                      },
+                      series: [
+                       {name:'新客销售额',
+                        color: '#5da0f2',
+                        data: newCustomerSaleData
+                      }]
+                    };
+                //3活动期间开台数
+                newCustomerSaleRateCategories=[];
+                newCustomerSaleRateData=[];
+                newCustomerSaleRateAvg=[];
+                activityOrderdataAll=null;
+                for(var i=0;i<model.activityOrder.length;i++){
+                    newCustomerSaleRateCategories.push(model.activityOrder[i].date);
+                    newCustomerSaleRateData.push(model.activityOrder[i].data);
+                    newCustomerSaleRateAvg.push(model.activityOrder[i].avg);
+                    activityOrderdataAll+=model.activityOrder[i].data;
+                }
+                // 图三显示与否
+                if (!activityOrderdataAll) {this.isshow3=true;}
+
+
+                this.marketData3= {
+                      title: {
+                        text: '活动期间开台数',
+                         style:{fontFamily: 'PingFangSC-Regular',
+                              fontSize: '15px',
+                              color:'#333',
+                              letterSpacing: '0.2px'}
+                      },
+                      chart: {type: 'spline'},
+                      subtitle: {text: '指活动期间日/周/月开台数',
+                    style:{fontFamily: 'PingFangSC-Light',
+                                fontSize: '12px',
+                                color: '#999',
+                                letterSpacing: '0.17px'}},
+                      xAxis: {
+                        categories:newCustomerSaleRateCategories
+                      },
+                      yAxis: {
+                         max:activityOrderTop,
+                         min:0,
+                        title:"",
+                        plotLines: [{   //一条延伸到整个绘图区的线，标志着轴中一个特定值。
+                          color: '#ffc611',
+                          dashStyle: 'Solid', 
+                          width: 1,
+                          value:newCustomerSaleRateAvg[0],  //y轴显示位置
+                          zIndex: 5,
+                          label: {
+                              text: '非活动期平均新客消费占比',
+                              verticalAlign: 'bottom',
+                              align:'right',
+                              x:-10,
+                              y:-10,
+                              style: {
+                                  color: '#eca300'
+                              }
+                          }
+                        }],
+                        plotBands: [{
+                              color: '#FCFFC5',
+                              from: 0,
+                              to: newCustomerSaleRateAvg[0]
+                        }]
+                      },
+                      tooltip: {
+                        xDateFormat: '%Y-%m-%d',
+                        shared: true,
+                        crosshairs: {
+                          width: 1,
+                          color: '#ccc'
+                        },
+                      },
+                     legend: {
+                       enabled: false
+                     },
+                     credits: {  
+                        enabled: false  
+                     },
+                      plotOptions: {   
+                        series: {//这个是标记数据点的
+                          marker: {
+                              enabled:false,
+                              radius:3
+                          },
+                          lineWidth:1
+                        }
+                      },
+                      series: [
+                       {name:'新客销售占比',
+                        color: '#5da0f2',
+                        data: newCustomerSaleRateData
+                      }]
+                    };
+
+                //4优免占比的两条线
+                disCountRateCategories=[];
+                disCountRateData=[];
+                disCountRateAvg=[];
+                disCountRateAvg0=[];
+                for(var i=0;i<model.disCountRate.length;i++){
+                    disCountRateCategories.push(model.disCountRate[i].date);
+                    disCountRateData.push(model.disCountRate[i].data);
+                    disCountRateAvg.push(model.disCountRate[i].avg);
+                    disCountRateAvg0.push(model.disCountRate[i].avg0)
+                }
+                this.marketData4= {
+                    title: {
+                      text: '优免占比',
+                      style:{fontFamily: 'PingFangSC-Regular',
+                              fontSize: '15px',
+                              color:'#333',
+                              letterSpacing: '0.2px'}
+                    },
+                    subtitle: {
+                      text: '(应付金额-实付金额）/订单应付总额',
+                      style:{fontFamily: 'PingFangSC-Light',
+                                fontSize: '12px',
+                                color: '#999',
+                                letterSpacing: '0.17px'}
+                    },
+                    xAxis: {
+                      categories: disCountRateCategories
+                    },
+                    yAxis: {
+                      max:Number(disCountRateAvg[0])+10,
+                      min:0,
+                      labels:{
+                        enabled:false
+                      },
+                      title:"",
+                      plotLines: [{   //一条延伸到整个绘图区的线，标志着轴中一个特定值。
+                          color: '#d1f5e0',
+                          dashStyle: 'Solid', 
+                          width: 1,
+                          value:disCountRateAvg[0],  //y轴显示位置
+                          zIndex: 5,
+                          label: {
+                              text: '健康参考值'+disCountRateAvg0[0]+'%'+'~'+disCountRateAvg[0]+'%',
+                              verticalAlign: 'bottom',
+                              align:'right',
+                              x:-10,
+                              y:-5,
+                              style: {
+                                  color: '#14A050'
+                              }
+                          }
+                        }],
+                        plotBands: [{
+                              color: '#18CB65',
+                              from: disCountRateAvg0[0],
+                              to: disCountRateAvg[0]
+                        }]
+                    },
+
+                    tooltip: {
+                       xDateFormat: '%Y-%m-%d',
+                        shared: true
+                    },
+                   legend: {
+                     enabled: false
+                   },
+                    credits: {  
+                      enabled: false  
+                    },
+                    plotOptions: {
+                        line: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '{y} %',
+                                style:{
+                                  // color:"#b854ff",
+                                }
+                            }
+                          
+                        }
+                      },
+                    series: [{name:'优免占比',
+                      color: '#b854ff',
+                      data:disCountRateData
+                    }]
+                  };
+                //图表2结束
+              }else{
+                console.log("暂无数据")
+              }
+            })
+      }
+  }
+});
+ 
+
+
+
+
+
+</script>
+
+</body>
+</html>

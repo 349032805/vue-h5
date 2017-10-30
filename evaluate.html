@@ -1,0 +1,191 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta content="yes" name="apple-mobile-web-app-capable">      
+<meta content="black" name="apple-mobile-web-app-status-bar-style">
+<meta content="telephone=no" name="format-detection">
+<title>顾客评价</title>
+<link href="css/work.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+      <div class="selectTool  clearfix">
+        <div class="selectTool-inner">
+      <div class="left tool-left relative width50 tac arrow-info-blue" v-if="hasSubbranch==1" @click="getStoreNameUrl">
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="left tool-left relative width50 tac arrow-info-grey" v-else>
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="right width50 tac arrow-info-blue" @click="getStoreTimeUrl">
+          <span class="toolText textover" v-if="startDate==endDate" v-text="newstartDate"></span>
+          <span class="toolText text-week" v-else>
+            <template v-if="yearTime">
+               <span v-text="newstartDate"></span>-<p v-text="newendDate"></p>
+            </template>
+            <div v-else style="padding-top:5px">
+              <span v-text="newstartDate"></span>-<span v-text="newendDate"></span>
+            </div>
+          </span>
+      </div></div>
+    </div>
+
+
+        <div class="selectResult">
+            <div class="blank" v-show="!isshow" style="padding-top:50%">暂时没有数据</div>
+            <div v-show="isshow">
+              <div class="spacediv"></div>
+              <div class="plr10">
+                <table class="table-info font14 tal evaluate-table" cellpadding="0" cellspacing="0">
+                  <tr class="evaluate-tr-th">
+                    <th width="15%" class="">排行</th>
+                    <th width="45%" class="tal textover">菜品名称</th>
+                    <th width="18%">点赞数</th>
+                    <th width="12%">销量</th>
+                  </tr>
+                  <tr v-for="(item,index) in evaluatedata">
+                    <td>
+                      <span v-if="index==0" class="no1"></span>
+                      <template v-else> 
+                        <span v-if="index==1" class="no2"></span>
+                        <span v-if="index==2" class="no3"></span>
+                        <span v-if="index!=0 && index!=1 && index!=2" class="pl10" v-text="index+1"></span>
+                      </template>
+                    </td>
+                    <td class="textover">
+                      <div style="max-width:150" class="textover" v-text="item.dishName"></div>
+                    </td>
+                    <td><b v-text="item.favorCount"></b></td>
+                    <td>
+                      <span v-text="item.sales"></span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+        </div>
+        <div v-show="loading" class="loading-bg">
+          <div  class="weui-loading"></div>加载中，请稍后...
+        </div>
+    </div>
+<script type="text/javascript" src="js/vue.js"></script>
+<script type="text/javascript" src="js/vue-resource.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/vue-highcharts.js"></script>
+<script type="text/javascript" src="js/fastclick.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+<script type="text/javascript">
+  var vm = new Vue({
+      el: '#app',
+      data: {
+        evaluatedata:"",
+        loading:false,
+        isshow:false,
+        hasSubbranch:"",
+        token:"",
+        shopName:"",
+        shopGuid:"",
+        startDate:"",
+        endDate:"",
+        timeRange:""
+      },
+      created: function() {
+          this.shopName=GetQueryString("shopName");//获取店铺名称
+          this.startDate=GetQueryString("startDate");
+          this.endDate=GetQueryString("endDate");
+          this.timeRange=GetQueryString("timeRange");
+          this.token=GetQueryString("token");
+          this.shopGuid=GetQueryString("shopGuid");
+          this.hasSubbranch=GetQueryString("hasSubbranch");
+          this.getEvaluate(this.shopGuid,this.startDate,this.endDate,this.timeRange);
+      },
+      computed : {
+        yearTime: function () {
+          var value = this.startDate;
+          var year = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+          return parseInt(year) < new Date().getFullYear();
+        },
+        newstartDate:function(){
+            var newdate=new Date().getFullYear();
+            var value=this.startDate;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        },
+        newendDate:function(){
+            var newdate=new Date().getFullYear();
+            var value=this.endDate;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        }
+     },
+      methods: {
+          getEvaluate: function(shopGuid,startDate,endDate,timeRange) {//修改门店或者时间后所用函数
+              this.$http({
+                  url:'./shopMaster/operation/evaluate/detail',
+                  method: 'GET',
+                  headers:{'token':this.token},
+                  params:{
+                    "shopGuid":shopGuid,   //商家ID
+                    "startDate":startDate,
+                    "endDate":endDate,
+                    "timeRange":timeRange //1：日 2：周 3：月 4：最近30天
+                  }
+              }).then(function (response){
+                if(response.body.code==200){
+                  var responseData=response.body.model;
+                  if(responseData.length>0){
+                    this.evaluatedata=responseData;
+                    this.isshow=true;
+                  }else{
+                    this.isshow=false;//没有数据的情况，显示数据为空
+                  }
+                }else{
+                  if(response.body.errorCode!=50004){
+                    alert(response.body.message)
+                  }
+                }
+                this.loading=false;//隐藏加载loading
+              })
+          },
+          getStoreNameUrl:function(){
+             self.location="baiweiyun://com.operation/changeShop"; 
+          },
+          getStoreNameInner:function(shopGuid,shopName){
+            this.getEvaluate(shopGuid,this.startDate,this.endDate,this.timeRange);
+            this.shopGuid=shopGuid;
+            this.shopName=shopName;
+          },
+          getStoreTimeUrl:function(){
+              window.location.href="baiweiyun://com.operation/changeDate?timeRange="+this.timeRange+"&startDate="+this.startDate+"&endDate="+this.endDate; 
+          },
+          getStoreTimeInner:function(startDate,endDate,timeRange){
+            this.getEvaluate(this.shopGuid,startDate,endDate,timeRange);
+            this.startDate=startDate;
+            this.endDate=endDate;
+            this.timeRange=timeRange;
+          }
+      }
+});
+function getStoreName(shopGuid,shopName){//修改店铺名称
+  vm.getStoreNameInner(shopGuid,shopName)
+}
+function getStoreTime(startDate,endDate,timeRange){//修改店铺时间
+  vm.getStoreTimeInner(startDate,endDate,timeRange)
+}
+</script>
+</body>
+</html>

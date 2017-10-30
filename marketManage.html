@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+	<meta content="yes" name="apple-mobile-web-app-capable">      
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<link rel="shortcut icon" href="favicon.ico" />
+	<title>营销管理</title>
+	<link href="css/work.css" rel="stylesheet">
+  <style>
+    .x-head{height:40px;line-height: 40px;background:#fff;}
+  </style>
+
+</head>
+<body>
+  <div id="app" v-cloak>  
+
+        <div class="selectTool  relative clearfix">
+        <div class="x-head">
+          <div class="left tool-left relative width50 tac arrow-info-blue" @click="getStoreNameUrl" v-if="hasSubbranch==1">
+
+            <span class="relative inlineblock">
+                <span class="toolText textover" v-text="shopName"></span>
+            </span>
+          </div>
+          <div class="left tool-left relative width50 tac arrow-info-grey" v-if="hasSubbranch!=1">
+            <span class="relative inlineblock">
+                <span class="toolText textover" v-text="shopName"></span>
+            </span>
+          </div>
+          <!-- 下拉组件，有点坑 -->
+
+          <div class="right width50 tac arrow-info-blue" @click="selectshow=!selectshow" style="position:relative;z-index:999" v-cloak>
+            <span class="relative inlineblock">
+                <span class="toolText" style="width:auto" v-text=storeStatusInfo></span>
+            </span>
+            <crselect v-show="selectshow"></crselect>
+
+          </div></div>
+        </div>
+
+
+
+      <div style="padding-top: 52px" v-if="listData">
+        <div id="app2" class="border-1px relative" v-for="item in listData">
+          <div @click="enterActivity(item.shopGuid,item.bargainId,item.status,item.imgCharacter,item.imgBgColor,item.title,item.startDate,item.endDate,item.shopName,item.bargainCls,itemUi,item.logoNameCode,item.itemId||null)" class="activityList">
+            <template v-if="item.bargainCls==1">
+                <div id="firstmin" v-bind:style="{background: item.imgBgColor}" ><p v-text=item.imgCharacter style="font-family: PingFangSC-Regular;font-size: 14px;color: #9C7A5E;letter-spacing: 4px;"></p></div>
+            </template>
+            <template v-else-if="item.bargainCls==2">
+                <div id="firstmin" v-bind:style="{background: item.imgBgColor}" ><p v-text=item.imgCharacter></p></div>
+            </template>
+            <template v-else-if="item.bargainCls==3&&item.logoNameCode==5">
+                <div id="firstmin" v-bind:style="{background: item.imgBgColor}" ><p v-text=item.imgCharacter></p></div>
+            </template> 
+            <!-- 五个字ui情况 -->
+             <template v-else-if="item.bargainCls==3&&item.logoNameCode==6">
+                <div id="firstmin" v-bind:style="{background: item.imgBgColor}" ><p v-text=itemUi[0] style="width:93px;position:relative;right:4px"></p><p v-text=itemUi[1] style="width:36px;position:relative;top:-16px"></p></div>
+            </template> 
+
+             <!--右侧  -->
+            <div id="firstdetail" class="info-left">
+              <p id="topline" v-text=item.title></p> 
+              <span style="font-size: 12px;letter-spacing: 0.17px;margin-top:0px;display:block"><i class="col666" v-text=item.startDate></i>&nbsp<i v-text=aword style="font-size:12px;"></i>&nbsp<i class="col666" v-text=item.endDate></i></span>
+              <p class="col999 shopClass" v-text=item.shopName></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    <div class="blanks" v-show="isshow">暂时没有数据</div>
+
+    <div v-show="loading" class="loading-bg">
+        <div class="weui-loading"></div>加载中，请稍后...
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="js/vue.js"></script>
+<script type="text/javascript" src="js/vue-resource.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/fastclick.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+<script>
+var vm = new Vue({
+      el: '#app',
+      data: {
+        styleObj:null,
+        storeStatusInfo:"进行中",
+        selectshow:false,
+        loading:true,
+        isshow:false,
+        token:null,
+        shopGuid:null,            
+        shopName:null,       
+        hasSubbranch:null,
+        listData:null,
+        itemUi:null,
+        status:null,
+        aword:"至"
+      },
+      created: function() {
+          this.hasSubbranch=GetQueryString("hasSubbranch");
+          this.shopName=GetQueryString("shopName");//获取店铺名称
+          this.token=GetQueryString("token");
+          this.shopGuid=GetQueryString("shopGuid");
+          
+          this.getMarketinglist(this.shopGuid,2);
+          // 5字ui情况
+
+
+      },
+      methods: {
+          changeName:function(index){
+              var val=['未开始','进行中','已结束']
+              this.storeStatusInfo=val[index];
+              this.selectshow=true;
+              this.getMarketinglist(this.shopGuid,index+1);
+              this.status=index+1;
+          },
+          enterActivity:function(shopGuid,bargainId,status,imgCharacter,imgBgColor,title,startDate,endDate,shopName,bargainCls,itemUi,logoNameCode,itemId){
+
+              // alert(logoNameCode);
+            // 缓存带到下一个页面的所需数据
+            localStorage.setItem("imgCharacter",imgCharacter);
+            localStorage.setItem("title",title);
+            localStorage.setItem("startDate",startDate);
+            localStorage.setItem("endDate",endDate);
+            localStorage.setItem("shopName",shopName);
+            localStorage.setItem("bargainCls",bargainCls);
+            localStorage.setItem("imgBgColor",imgBgColor);
+            localStorage.setItem("itemUi",itemUi);
+            localStorage.setItem("logoNameCode",logoNameCode);
+             localStorage.setItem("itemId",itemId);
+          
+ 
+            if(status==1){
+              alert("活动暂未开始")
+            }else{
+              window.location.href="marketing"+bargainCls+".html?token="+this.token+"&shopGuid="+shopGuid+"&bargainId="+bargainId+"&status="+status+"&bargainCls="+bargainCls;
+            }  
+          },
+          getMarketinglist: function(shopGuid,status) {
+              this.$http({
+                 url:'./shopMaster/activity/activities',
+                 //url:'http://boss.qa.51eparty.com/shopMaster/activity/activities',
+                method: 'GET',
+                headers:{'token':this.token},
+                params:{
+                  "shopGuid":shopGuid,   //商家ID
+                  "status":status
+                }
+              }).then(function (response){
+
+                var responseData=response.body.model;       console.dir(responseData);   console.dir(response.body); 
+                var codeData= response.body;
+                // 异常状况的处理
+                 if (codeData.code ==500) {
+                   alert(codeData.message);
+                 }
+                 if (!codeData.model) {vm.isshow=true;}  
+
+                 else if(!!responseData && responseData.length>0){
+                   this.listData=responseData;
+                  // 5字ui情况
+                  var that=this;
+                  responseData.forEach(function(item,index){                
+                   for(x in item){
+                       if (item[x]=='6'&&item.imgCharacter) {
+
+                         let itemX=item.imgCharacter;
+                    
+                     console.dir(that)
+                          that.itemUi=[itemX.substr(0,3),itemX.substr(3)]
+                    
+                         }
+
+                   }
+
+
+                  })
+
+
+
+                   this.isshow=false;
+                 }else{
+
+                 this.listData=null;
+                 this.isshow=true;//没有数据的情况，显示数据为空
+                 }
+                // 隐藏加载loading
+                 
+                 this.loading=false;
+              })
+          },
+          getStoreNameUrl:function(){
+            self.location="baiweiyun://com.operation/changeShop"; 
+          },
+          getStoreNameInner:function(shopGuid,shopName){
+            this.shopGuid=shopGuid;
+            this.shopName=shopName;
+            this.getMarketinglist(shopGuid,this.status);
+          }
+      }
+});
+function getStoreName(shopGuid,shopName){//修改店铺名称
+  vm.getStoreNameInner(shopGuid,shopName)
+}
+</script>
+</html>

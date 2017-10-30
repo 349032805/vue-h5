@@ -1,0 +1,731 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+<!-- <meta content="yes" name="apple-mobile-web-app-capable">      
+<meta content="black" name="apple-mobile-web-app-status-bar-style"> -->
+<meta content="telephone=no" name="format-detection">
+<!-- <link rel="shortcut icon" href="favicon.ico" /> -->
+<title>营业额报表</title>
+<link href="css/work.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <div class="selectTool  clearfix">
+      <div class="selectTool-inner">
+      <div class="left tool-left relative width50 tac arrow-info-blue" v-if="hasSubbranch==1" @click="getStoreNameUrl">
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="left tool-left relative width50 tac arrow-info-grey" v-else>
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="right width50 tac arrow-info-blue" @click="getStoreTimeUrl">
+          <span class="toolText textover" v-if="startDate==endDate" v-text="newstartDate"></span>
+          <span class="toolText text-week" v-else>
+            <template v-if="yearTime">
+               <span v-text="newstartDate"></span>-<p v-text="newendDate"></p>
+            </template>
+            <div v-else style="padding-top:5px">
+              <span v-text="newstartDate"></span>-<span v-text="newendDate"></span>
+            </div>
+          </span>
+      </div></div>
+    </div>
+
+      <div class="selectResult">
+            <template v-if='dataTop'>
+              <div class="mb10 bgfff">
+                <div class="highcharts-info plr10">
+                    <div class="info-left">
+                        <p>营业额(元)</p>
+                        <p>
+                          <b class="font22 vm col333">
+                            <span v-text="dataTop.turnover.data"></span>
+                          </b>
+                        </p>
+                    </div>
+
+                    <div class="info-right">
+                      <p v-cloak>较上{{timeRangeText}}:
+                       <span v-if="dataTop.turnover.comparison>0" :class="['colred']">
+                        <span v-text="dataTop.turnover.comparison"></span>%
+                      </span>
+                      <span v-else-if="dataTop.turnover.comparison<0" :class="['colgreen']">
+                        <span v-text="dataTop.turnover.comparison"></span>%
+                      </span>
+                      <span v-else>
+                        <span>--</span>
+                      </span>
+                      </p>
+                      <p>同菜系均值:
+                        <span class="col333" v-text="dataTop.turnover.avg"></span>
+                      </p>
+                    </div>
+                </div>
+                  <div v-if="typeData1">
+                    <highcharts :options="typeData1" ref="highcharts" style="height:260px"></highcharts>
+                  </div>
+                  <div v-else class="blankdata" >暂无数据</div>
+              </div>
+            </template>
+         <!-- 第二个图表线上实收 -->
+          <template v-if='dataTop'>  
+            <div class="mb10 bgfff">
+              <div class="highcharts-info plr10">
+                  <div class="info-left">
+                      <p>线上实收(元)</p>
+                      <p>
+                        <b class="font22 vm col333">
+                          <span v-text="dataTop.online.data"></span>
+                        </b>
+                      </p>
+                  </div>
+                  <div class="info-right">
+                    <p>较上{{timeRangeText}}:
+                      <span v-if="dataTop.online.comparison>0" :class="['colred']">
+                        <span v-text="dataTop.online.comparison"></span>%
+                      </span>
+                      <span v-else-if="dataTop.online.comparison<0" :class="['colgreen']">
+                        <span v-text="dataTop.discount.comparison"></span>%
+                      </span>
+                      <span v-else>
+                        <span>--</span>
+                      </span>
+                    </p>
+                    <p>同菜系均值:
+                      <span class="col333" v-text="dataTop.online.avg"></span>
+                    </p>
+                  </div>
+              </div>
+              <datatemplate ref="refclose2" :status="status1" :bankstatus="bankstatus" :options="typeData2" :type="type[1]" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></datatemplate>
+            </div>
+          </template>
+
+          <!-- 第三个图表线下支付 -->
+          <template v-if='dataTop'>  
+            <div class="mb10 bgfff">
+              <div class="highcharts-info plr10">
+                  <div class="info-left">
+                      <p>线下实收(元)</p>
+                      <p>
+                        <b class="font22 vm col333">
+                          <span v-text="dataTop.offline.data"></span>
+                        </b>
+                      </p>
+                  </div>
+                  <div class="info-right">
+                    <p>较上{{timeRangeText}}:
+                      <span v-if="dataTop.offline.comparison>0" :class="['colred']">
+                        <span v-text="dataTop.offline.comparison"></span>%
+                      </span>
+                      <span v-else-if="dataTop.offline.comparison<0" :class="['colgreen']">
+                        <span v-text="dataTop.offline.comparison"></span>%
+                      </span>
+                      <span v-else>
+                        <span>--</span>
+                      </span>
+                    </p>
+                    <p>同菜系均值:
+                      <span class="col333" v-text="dataTop.offline.avg"></span>
+                    </p>
+                  </div>
+              </div>
+              <datatemplate ref="refclose3" :status="status2" :bankstatus="bankstatus" :options="typeData3" :type="type[2]" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></datatemplate>
+              
+            </div>
+          </template>
+
+          <!-- 第四个图表优惠单数 -->
+          <template v-if='dataTop'>  
+            <div class="mb10 bgfff">
+              <div class="highcharts-info plr10">
+                  <div class="info-left">
+                      <p>优惠金额(元)</p>
+                      <p>
+                        <b class="font22 vm col333">
+                          <span v-text="dataTop.discount.data"></span>
+                        </b>
+                      </p>
+                  </div>
+                  <div class="info-right">
+                    <p>较上{{timeRangeText}}:
+                      <span v-if="dataTop.discount.comparison>0" :class="['colred']">
+                        <span v-text="dataTop.discount.comparison"></span>%
+                      </span>
+                      <span v-else-if="dataTop.discount.comparison<0" :class="['colgreen']">
+                        <span v-text="dataTop.discount.comparison"></span>%
+                      </span>
+                      <span v-else>
+                        <span>--</span>
+                      </span>
+                    </p>
+                    <p>同菜系均值:
+                      <span class="col333" v-text="dataTop.discount.avg"></span>
+                    </p>
+                  </div>
+              </div>
+              <datatemplate ref="refclose4"  :status="status3" :bankstatus="bankstatus" :options="typeData4" :type="type[3]" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></datatemplate>
+            </div>
+          </template>
+          
+          <!-- 第五个图表退款单数 -->
+          <template v-if='dataTop'>  
+            <div class="mb10 bgfff">
+              <div class="highcharts-info plr10">
+                  <div class="info-left">
+                      <p>退款金额(元)</p>
+                      <p>
+                        <b class="font22 vm col333">
+                          <span v-text="dataTop.refund.data"></span>
+                        </b>
+                      </p>
+                  </div>
+                  <div class="info-right">
+                    <p>较上{{timeRangeText}}:
+                      <span v-if="dataTop.refund.comparison>0" :class="['colred']">
+                        <span v-text="dataTop.refund.comparison"></span>%
+                      </span>
+                      <span v-else-if="dataTop.refund.comparison<0" :class="['colgreen']">
+                        <span v-text="dataTop.refund.comparison"></span>%
+                      </span>
+                      <span v-else>
+                        <span>--</span>
+                      </span>
+                    </p>
+                    <p>同菜系均值:
+                      <span class="col333" v-text="dataTop.refund.avg"></span>
+                    </p>
+                  </div>
+              </div>
+              <datatemplate ref="refclose5" :status="status4" :bankstatus="bankstatus" :options="typeData5" :type="type[4]" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></datatemplate>
+            </div>
+          </template>
+          
+            <template v-if="CounterShow">
+              <div class="incomeInfo border-1px">收银组成</div>
+              <div class="bgfff pt15" v-if="CounterData1">
+                <highcharts :options="CounterData1" ref="highcharts" style="height:100px"></highcharts>
+              </div>
+              <div class="bgfff relative" style="margin:-30px 0 0"  v-if="CounterData2">
+                <highcharts :options="CounterData2" ref="highcharts" style="height:100px"></highcharts>
+              </div>
+            </template>
+    </div>
+ </div>
+
+
+<script type="text/javascript" src="js/vue.js"></script>
+<script type="text/javascript" src="js/vue-resource.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/vue-highcharts.js"></script>
+<script type="text/javascript" src="js/fastclick.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+<script type="text/javascript">
+Vue.use(VueHighcharts);
+if ('addEventListener' in document) {  
+  document.addEventListener('DOMContentLoaded', function() {  
+    FastClick.attach(document.body);  
+  }, false);
+}
+//图表数据组件
+Vue.component("datatemplate", {
+        data:function() {
+            return {
+                'isshow':false,
+                'text':"展开图表"
+            }
+        },
+        props: ['options','type',"shopGuid","startDate","endDate","timeRange","status","bankstatus"],
+        template:'<div>'+
+                    '<div v-show="isshow">'+
+                    '<div v-if="options">'+
+          '<highcharts :options="options" ref="highcharts" style="height:260px"></highcharts>'+
+                    '</div>'+
+                    '<div v-if="status==0" class="blankdata">暂无数据</div>'+
+                    '<div v-if="bankstatus==0" class="blankdata">暂无数据</div>'+
+                    '</div>'+
+                    '<div class="fun-show border-1px relative" @click="showhide(type,shopGuid,startDate,endDate,timeRange)">'+
+                      '<span class="relative" :class="isshow?\'showspan\':\'hidespan\'">{{text}}</span>'+
+                    '</div>'+
+                  '</div>',
+        methods:{
+            showhide:function(type,shopGuid,startDate,endDate,timeRange) {
+              if(this.isshow){
+                this.isshow=false;
+                this.text="展开图表";
+              }else{
+                this.text="隐藏图表" 
+                this.$parent.getTurnoverData(type,shopGuid,startDate,endDate,timeRange);
+                this.isshow=true;
+              }
+            },
+            closetable:function(){
+              this.isshow=false;
+            }     
+        }
+    });
+ var vm = new Vue({
+      el: '#app',
+      data: {
+        loading:true,
+        timeRangeText:"",
+        dataTop:null,
+        bankstatus:0,
+        status1:1,
+        status2:1,
+        status3:1,
+        status4:1,
+        token:"",
+        shopName:"",
+        shopGuid:"",
+        startDate:"",
+        endDate:"",
+        timeRange:"",
+        hasSubbranch:"",
+        typeData1:null,
+        typeData2:null,
+        typeData3:null,
+        typeData4:null,
+        typeData5:null,
+        type:[1,2,3,4,5],//1：营业额 2：线上实收 3：线下实收 4：优惠金额 5：退款金额
+        CounterShow:false,
+        CounterData1:null,
+        CounterData2:null
+      },        
+      created: function() {
+          this.shopName=GetQueryString("shopName");//获取店铺名称
+          this.startDate=GetQueryString("startDate");
+          this.endDate=GetQueryString("endDate");
+          this.timeRange=GetQueryString("timeRange");
+          this.token=GetQueryString("token");
+          this.shopGuid=GetQueryString("shopGuid");
+          this.hasSubbranch=GetQueryString("hasSubbranch");
+
+      },
+      computed : {
+        yearTime: function () {
+          var value = this.startDate;
+          var year = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+          return parseInt(year) < new Date().getFullYear();
+        },
+        newstartDate:function(){
+            var newdate=new Date().getFullYear();
+            var value=this.startDate;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        },
+        newendDate:function(){
+            var newdate=new Date().getFullYear();
+            var value=this.endDate;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        }
+     },
+    methods: {
+        getTurnoverTop: function(shopGuid,startDate,endDate,timeRange) {//获取营业额图表的所有头部数据
+          this.$http({
+              url:'./shopMaster/business/turnover/statement',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "shopGuid":shopGuid,   //商家ID
+                "startDate":startDate,
+                "endDate":endDate,
+                "timeRange":timeRange //1：日 2：周 3：月 4：最近30天
+              }
+           }).then(function (response) {
+                if(this.timeRange==1){
+                  this.timeRangeText="日"
+                }else if(this.timeRange==2){
+                  this.timeRangeText="周"
+                }else if(this.timeRange==3){
+                  this.timeRangeText="月"
+                }
+                if(response.body.code==200){
+                   this.dataTop=response.body.model;
+                }else{
+                  if(response.body.errorCode!=50004){
+                    alert(response.body.message)
+                  }
+                }
+               
+            })
+        },
+        getTurnoverData:function(type,shopGuid,startDate,endDate,timeRange){//获取图表数据
+          if(type==1){
+             this.typeData1 = null;
+          }
+          if(type==2){
+             this.typeData2 = null;
+          }
+          if(type==3){
+             this.typeData3 = null;
+          }
+          if(type==4){
+             this.typeData4 = null;
+          }
+          if(type==5){
+             this.typeData5 = null;
+          }
+          this.$http({
+              url:'./shopMaster/business/turnover/statement/detail',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "type":type,  //1：营业额 2：线上实收 3：线下实收 4：优惠金额 5：退款金额
+                "shopGuid":shopGuid,   //商家ID
+                "startDate":startDate,
+                "endDate":endDate,
+                "timeRange":timeRange //1：日 2：周 3：月 4：最近30天
+              }
+           }).then(function (response) {
+                var tabelName=["营业额(元)","线上实收(元)","线下实收(元)","优惠金额(元)","退款金额(元)"]//图表名称
+                var dateArray=[],
+                    dataArray=[],
+                    avgArray=[],
+                    dataArrayAll=0,
+                    avgArrayAll=0;
+                if(response.body.code==200){
+                  var modelObj=response.body.model;
+                }else{
+                  if(response.body.errorCode!=50004){
+                    alert(response.body.message)
+                  }
+                  return false
+                }
+                
+                if(modelObj){
+                for(var i=0;i<modelObj.length;i++){
+                    dateArray.push(modelObj[i].date);
+                    dataArray.push(modelObj[i].data);
+                    avgArray.push(modelObj[i].avg);
+                    dataArrayAll+=modelObj[i].data;
+                    avgArrayAll+=modelObj[i].avg;
+                }
+                this.bankstatus=1;
+                var dataJSON={
+                    title: {text: ''},
+                    colors: ['#ffcf00', '#0073ff'],
+                    xAxis: {
+                      categories: dateArray //这个是X轴上的数据展示,
+                    },
+                    yAxis: {
+                      min:1,
+                      startOnTick: false,
+                     tickPosition: 'inside',
+                     lineWidth:0,
+                     labels: {
+                          align: 'left',
+                          x: 0,
+                          y: -2
+                      },
+                      title: {
+                        text: ''
+                      }
+                    },
+                    tooltip: {
+                      pointFormat: '<span style="">{series.name}</span>: {point.y:,.2f} <br/>',
+                      shared: true,
+                      crosshairs: {
+                          width: 1,
+                          color: '#ccc'
+                      },
+                       style: {
+                          color:"#333"
+                      },
+                      borderColor: '#ff974c'
+                  },
+                   plotOptions: {
+                      areaspline: {
+                           fillOpacity: 0.3,
+                      },
+                      series: {//这个是标记数据点的
+                            marker: {
+                                radius:3,
+                                states: {  
+                                    hover: {  
+                                        lineWidth: 1,
+                                        fillColor: '#fff',
+                                        lineWidthPlus: 0
+                                    }  
+                                }  
+                            },
+                            lineWidth:1,
+                            states: {
+                                hover: {
+                                    lineWidthPlus: 0
+                                }
+                            },
+                            fillColor: {
+                                  linearGradient: [0, 0, 0, 200],
+                                  stops: [
+                                      [0, Highcharts.getOptions().colors[0]],
+                                      [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                  ]
+                              }
+                      }
+                  },
+                    credits: {  
+                        enabled: false  
+                    }, 
+                    legend: {
+                      align: 'center',
+                      verticalAlign: 'bottom',
+                      symbolPadding:8,
+                      squareSymbol:false,
+                      symbolHeight:10,
+                      symbolWidth: 10,
+                      symbolRadius:0
+                    },
+                    series:[{
+                      "name": tabelName[type-1],
+                       "type": "spline",
+                      "data": dataArray
+                       }, {
+                       "name": "同菜系均值",
+                       "type": "areaspline",
+                       "data": avgArray
+                    }]
+                }
+
+            
+                    if(type==1){
+                      this.typeData1=dataJSON;
+                    }
+                    if(type==2){
+                      if(dataArrayAll==0 && avgArrayAll==0){
+                        this.status1=0;
+                      }else{
+                        this.typeData2 = dataJSON;
+                      } 
+                    }
+                    if(type==3){
+                      if(dataArrayAll==0 && avgArrayAll==0){
+                        this.status2=0;
+                      }else{
+                        this.typeData3 = dataJSON;
+                      } 
+                    }
+                    if(type==4){
+                      if(dataArrayAll==0 && avgArrayAll==0){
+                        this.status3=0;
+                      }else{
+                        this.typeData4 = dataJSON;
+                      } 
+                    }
+                    if(type==5){
+                      if(dataArrayAll==0 && avgArrayAll==0){
+                        this.status4=0;
+                      }else{
+                        this.typeData5 = dataJSON;
+                      } 
+                    }
+             
+          
+          }else{ 
+              this.bankstatus=0;
+          }
+                //图表结束
+            })
+        },
+        getCounter:function(shopGuid,startDate,endDate,timeRange){//获取收银数据
+            this.CounterData1 = null;
+            this.CounterData2 = null;
+            this.$http({
+              url:'./shopMaster/business/turnover/constitution',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "shopGuid":shopGuid,   
+                "startDate":startDate,
+                "endDate":endDate,
+                "timeRange":timeRange
+              }
+            }).then(function (response) {
+              if(response.body.model){
+                this.CounterShow=true;
+                var modelObj = response.body.model;
+                var series=[];
+                var incomeAccountStatics=modelObj.incomeAccountStatics;
+                var incomeSource=modelObj.incomeSource;
+                    series[0]=[{
+                        name: incomeAccountStatics[0].desc,
+                        color:"#00c3c0",
+                        data: [incomeAccountStatics[0].amount]
+                    },{
+                        name: incomeAccountStatics[1].desc,
+                        color:"#ffcf00",
+                        data: [incomeAccountStatics[1].amount]
+                    }]
+          
+                    series[1]=[{
+                        name: incomeSource[0].desc,
+                        color:"#00c3c0",
+                        data: [incomeSource[0].amount]
+                    },{
+                        name: incomeSource[1].desc,
+                        color:"#ffcf00",
+                        data: [incomeSource[1].amount]
+                    }]
+                //表单数据开始
+
+                  this.CounterData1={
+                    chart: {
+                        type: 'bar'
+                    },
+                    title: {
+                        text: ''
+                    },
+                    subtitle: {
+                        text: ''
+                    },
+                    xAxis:{
+                        visible: false,
+                    },
+                    yAxis: {
+                      visible: false,
+                      reversed: true  //这个是控制数据翻转的
+                    },
+                    plotOptions: {
+                        series: {
+                          stacking: 'percent',
+                          pointWidth:16,
+                          events: {//控制图标的图例legend不允许切换
+                               legendItemClick: function (event) {  
+                                   return false; //return  true 则表示允许切换
+                              }
+                          }
+                        }
+                    },
+                     legend:{
+                      symbolHeight:0.00001,
+                      symbolWidth: 0,
+                      verticalAlign:"middle",
+                    floating: true,
+                      y:-30,
+                      // reversed: true,
+                      labelFormatter: function () {
+                          return ' <span style="color:#888;">'+this.name+' </span>' + ' <span style="color:'+this.color+'">'+this.yData+'</span>';
+                      }
+                    },
+                    tooltip: {
+                        formatter: function () {
+                          return  this.series.name + Highcharts.numberFormat(Math.abs(this.point.y), 2);
+                        }
+                    },
+                    credits: {  
+                       enabled: false  
+                    }, 
+                    series: series[0]
+                  }
+                  this.CounterData2={
+                    chart: {
+                        type: 'bar'
+                    },
+                    title: {
+                        text: ''
+                    },
+                    subtitle: {
+                        text: ''
+                    },
+                    xAxis:{
+                        visible: false,
+                    },
+                    yAxis: {
+                      visible: false,
+                      reversed: true  //这个是控制数据翻转的
+                    },
+                    plotOptions: {
+                        series: {
+                          stacking: 'percent',
+                          pointWidth:16,
+                          events: {//控制图标的图例legend不允许切换
+                               legendItemClick: function (event) {  
+                                   return false; //return  true 则表示允许切换
+                              }
+                          }
+                        }
+                    },
+                     legend:{
+                      symbolHeight:0.00001,
+                      symbolWidth: 0,
+                      verticalAlign:"middle",
+                    floating: true,
+                      y:-30,
+                      // reversed: true,
+                      labelFormatter: function () {
+                          return ' <span style="color:#888;">'+this.name+' </span>' + ' <span style="color:'+this.color+'">'+this.yData+'</span>';
+                      }
+                    },
+                    tooltip: {
+                        formatter: function () {
+                          return  this.series.name + Highcharts.numberFormat(Math.abs(this.point.y), 2);
+                        }
+                    },
+                    credits: {  
+                       enabled: false  
+                    }, 
+                    series: series[1]
+                  }
+                //表单数据结束
+               }else{
+                 this.CounterShow=false;
+               } 
+            })
+        },
+        getStoreNameUrl:function(){
+           self.location="baiweiyun://com.operation/changeShop"; 
+        },
+        getStoreNameInner:function(shopGuid,shopName){
+           this.shopName=shopName;
+           this.shopGuid=shopGuid;
+           this.$refs.refclose2.closetable(); //关闭下边4个排行关闭状态
+           this.$refs.refclose3.closetable();
+           this.$refs.refclose4.closetable();
+           this.$refs.refclose5.closetable();
+           
+           this.getTurnoverTop(shopGuid,this.startDate,this.endDate,this.timeRange)
+           this.getTurnoverData(1,shopGuid,this.startDate,this.endDate,this.timeRange);
+           this.getCounter(shopGuid,this.startDate,this.endDate,this.timeRange);
+        },
+        getStoreTimeUrl:function(){
+            window.location.href="baiweiyun://com.operation/changeDate?timeRange="+this.timeRange+"&startDate="+this.startDate+"&endDate="+this.endDate; 
+        },
+        getStoreTimeInner:function(startDate,endDate,timeRange){
+          this.startDate=startDate;
+          this.endDate=endDate;
+          this.timeRange=timeRange;
+          this.$refs.refclose2.closetable(); //关闭下边4个排行关闭状态
+          this.$refs.refclose3.closetable();
+          this.$refs.refclose4.closetable();
+          this.$refs.refclose5.closetable();
+          this.getCounter(this.shopGuid,startDate,endDate,timeRange);
+          this.getTurnoverTop(this.shopGuid,startDate,endDate,timeRange)
+          this.getTurnoverData(1,this.shopGuid,startDate,endDate,timeRange);
+         
+        }
+    }
+
+})
+function getStoreName(shopGuid,shopName){//修改店铺名称
+  vm.getStoreNameInner(shopGuid,shopName)
+}
+function getStoreTime(startDate,endDate,timeRange){//修改店铺时间
+  vm.getStoreTimeInner(startDate,endDate,timeRange)
+}
+</script>
+</body>
+</html>

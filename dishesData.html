@@ -1,0 +1,504 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta content="yes" name="apple-mobile-web-app-capable">      
+<meta content="black" name="apple-mobile-web-app-status-bar-style">
+<meta content="telephone=no" name="format-detection">
+<title>菜品数据</title>
+<link rel="stylesheet" href="css/work.css">
+</head>
+<body>
+    <div id="app">
+      <div class="selectTool  clearfix">
+        <div class="selectTool-inner">
+      <div class="left tool-left relative width50 tac arrow-info-blue" v-if="hasSubbranch==1" @click="getStoreNameUrl">
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="left tool-left relative width50 tac arrow-info-grey" v-else>
+          <span class="toolText textover" v-text="shopName"></span>
+      </div>
+      <div class="right width50 tac arrow-info-blue" @click="getStoreTimeUrl">
+          <span class="toolText textover" v-if="startDate==endDate" v-text="newstartDate"></span>
+          <span class="toolText text-week" v-else>
+            <template v-if="yearTime">
+               <span v-text="newstartDate"></span>-<p v-text="newendDate"></p>
+            </template>
+            <div v-else style="padding-top:5px">
+              <span v-text="newstartDate"></span>-<span v-text="newendDate"></span>
+            </div>
+          </span>
+      </div></div>
+    </div>
+	
+
+
+      <template v-if="typeData1Info">
+        <div class="selectResult">
+            <div class=" bgfff">
+              <div class="highcharts-info plr10">
+                  <div class="info-left">
+                      <p>销售菜品(道)</p>
+                      <p>
+                        <b class="font22 vm col333">
+                          <span v-text="typeData1Info.data"></span>
+                        </b>
+                      </p>
+                  </div>
+                  <div class="info-right">
+                    <p>较上<span v-text="timeRangeText"></span>
+                      <span v-if="typeData1Info.comparison>0" :class="['colred']">
+                        <span v-text="typeData1Info.comparison"></span>%
+                      </span>
+                      <span v-else-if="typeData1Info.comparison<0" :class="['colgreen']">
+                        <span v-text="typeData1Info.comparison"></span>%
+                      </span>
+                      <span v-else>
+                        <span>--</span>
+                      </span>
+                    </p>
+                    <p>同菜系均值：<span class="col333" v-text="typeData1Info.avg"></span></p>
+                  </div>
+              </div>
+              <template v-if="typeData1">
+                 <highcharts :options="typeData1" ref="highcharts" style="height:260px"></highcharts>
+              </template>
+              <div v-else class="blankdata" >暂无数据</div>
+            </div>
+          </div>
+        </template>
+        
+
+        <div class="dishDataTitle bgfff border-1px" @click="getDishesData(2,shopGuid,startDate,endDate,timeRange)">
+            <div class="left">本<span v-text="timeRangeText"></span>菜品人气TOP3</div>
+            <div class="right" style="width:24px">
+                <span class="relative" :class="isshow2?'showspan':'hidespan'"></span>
+            </div>
+        </div>
+        <div v-show="isshow2" style="display:none">
+          <div v-if="typeData2" class="dishesData-progress">
+            <div class="progress"  v-for="item in typeData2">
+              <span class="pencent" :style="{width:item.pencent}">
+                <span>
+                  <i v-text="item.dishName"></i><i class="line">|</i>销量：<i v-text="item.sales"></i>
+                </span>
+              </span>
+              <b v-text="item.favorCount"></b>
+            </div>
+          </div>
+          <div v-if="status2==0" class="blankdata">暂无数据</div>
+        </div>
+
+        <!-- 这个是第三个图表 -->
+        <rankmenu :title="menutitles[0]" :status="status" ref="refclose1" :options="typeData3" :nodata="nodata" :type="type[2]" :evaluatedata="evaluatedata3" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></rankmenu>
+        <!-- 这个是第四个图表 --> 
+        <rankmenu :title="menutitles[1]" :status="status" ref="refclose2" :options="typeData4" :nodata="nodata" :type="type[3]" :evaluatedata="evaluatedata4" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></rankmenu>
+        <!-- 这个是第五个图表  -->
+        <rankmenu :title="menutitles[2]" :status="status" ref="refclose3" :options="typeData5" :nodata="nodata" :type="type[4]" :evaluatedata="evaluatedata5" :shop-guid="shopGuid" :start-date="startDate" :end-date="endDate" :time-range="timeRange"></rankmenu>
+
+        
+</div>
+</div>
+
+<script type="text/javascript" src="js/vue.js"></script>
+<script type="text/javascript" src="js/vue-resource.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/vue-highcharts.js"></script>
+<script type="text/javascript" src="js/fastclick.js"></script>
+<script type="text/javascript" src="js/common.js"></script>
+
+<script type="text/javascript">
+Vue.use(VueHighcharts);
+Vue.component("rankmenu",{
+    data:function() {
+      return {
+        isshow:false
+      }
+    },
+    props: ["options","title","type","evaluatedata","shopGuid","startDate","endDate","timeRange","status"],
+    template:'<div>'+
+                '<div class="dishDataTitle bgfff border-1px" @click="titleClick(type,shopGuid,startDate,endDate,timeRange)">'+
+                    '<div class="left">{{title}}</div>'+
+                    '<div class="right" style="width:24px">'+
+                      '<span class="relative" :class="isshow?\'showspan\':\'hidespan\'"></span>'+
+                    '</div>'+
+                '</div>'+
+                '<div v-show="isshow">'+
+                  
+                  '<div v-if="options">'+
+                    '<highcharts :options="options" ref="highcharts"></highcharts>'+
+                    '<div class="bgfff">'+
+                      '<div class="spacediv"></div>'+
+                      '<div class="plr10 mb10">'+
+                        '<table class="table-info font14 tal evaluate-table bgfff" cellpadding="0" cellspacing="0">'+
+                          '<tr class="evaluate-tr-th">'+
+                              '<th width="40%" class="tal textover" v-text="type==3?\'菜类名称\':\'菜品名称\'"></th>'+
+                              '<th width="20%">销售金额</th>'+
+                              '<th width="18%">点赞数</th>'+
+                              '<th width="12%">销量</th>'+
+                          '</tr>'+
+                          '<tr v-for="(item,index) in evaluatedata">'+
+                              '<td class="textover">'+
+                                '<div style="max-width:150" class="textover" v-text="item.dishName"></div>'+
+                              '</td>'+
+                              '<td class="textover">'+
+                                '<div v-text="item.amount"></div>'+
+                              '</td>'+
+                              '<td><b v-text="item.favorCount"></b></td>'+
+                              '<td>'+
+                                '<span v-text="item.sales"></span>'+
+                              '</td>'+
+                          '</tr>'+
+                        '</table>'+
+                      '</div>'+
+                    '</div>'+
+                  '</div>'+
+
+                  '<div v-if="status==0" class="blankdata">暂无数据</div>'+
+                '</div>'+
+            '</div>',
+    methods:{
+      titleClick:function(type,shopGuid,startDate,endDate,timeRange){
+        if(this.isshow==false){
+          this.isshow=true;
+          this.$parent.getDishesData(type,shopGuid,startDate,endDate,timeRange);
+        }else{
+          this.isshow=false
+        }
+      },
+      closerank:function(){
+        this.isshow=false;
+      }
+    }
+})
+
+var vm = new Vue({
+      el: '#app',
+      data: {
+        gridData:[],
+        timeRangeText:"日",
+        isshow2:false,
+        status:1,
+        status2:1,
+        nodata:false,
+        token:"",
+        shopName:"",
+        shopGuid:"",
+        startDate:"",
+        endDate:"",
+        timeRange:"",
+        hasSubbranch:"",
+        typeData1Info:null,
+        typeData1:null,
+        typeData2:null,
+        typeData3:null,
+        typeData4:null,
+        typeData5:null,
+        evaluatedata3:null,
+        evaluatedata4:null,
+        evaluatedata5:null,
+        type:[1,2,3,4,5], // 1：销售菜品 2：本月菜品人气TOP3 3：菜类金额排行 4：菜品金额排行 5：菜品畅销排行
+        menutitles:["菜类金额排行","菜品金额排行","菜品畅销排行"]
+      },
+    created: function() {
+      this.shopName=GetQueryString("shopName");//获取店铺名称
+      this.startDate=GetQueryString("startDate");
+      this.endDate=GetQueryString("endDate");
+      this.timeRange=GetQueryString("timeRange");
+      this.token=GetQueryString("token");
+      this.shopGuid=GetQueryString("shopGuid");
+      this.hasSubbranch=GetQueryString("hasSubbranch");
+      this.getDishesData(1,this.shopGuid,this.startDate,this.endDate,this.timeRange)
+    },
+    computed : {
+        yearTime: function () {
+          var value = this.startDate;
+          var year = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+          return parseInt(year) < new Date().getFullYear();
+        },
+        newstartDate:function(){
+           return this.timeFormat(this.startDate)
+        },
+        newendDate:function(){
+           return  this.timeFormat(this.endDate)
+        }
+     },
+    methods: {
+        timeFormat:function(time){
+            var newdate=new Date().getFullYear();
+            var value=time;
+            var Staryear = value.split('')[0]+value.split('')[1]+value.split('')[2]+value.split('')[3];
+            var Starmonth = value.split('')[5]+value.split('')[6];
+            var Starday = value.split('')[8]+value.split('')[9];
+            if(newdate>Staryear){
+              return Staryear+"年"+Starmonth+"月"+Starday+"日"
+            }else{
+              return Starmonth+"月"+Starday+"日"
+            }
+        },
+        getDishesData: function(type,shopGuid,startDate,endDate,timeRange) {
+          if(type==1){//为了清除点击一次后在刚进来时候的页面动画晃动
+            this.typeData1=null
+          } 
+          if(type==2){
+            this.typeData2=null
+          } 
+          if(type==3){
+            this.typeData3=null
+          } 
+          if(type==4){
+            this.typeData4=null
+          }
+          if(type==5){
+            this.typeData5=null
+          } 
+          this.$http({
+              url:'./shopMaster/operation/dishData/detail',
+              method:'GET',
+              headers:{'token':this.token},
+              params:{
+                "type":type,  
+                "shopGuid":shopGuid,   //商家ID
+                "startDate":startDate,
+                "endDate":endDate,
+                "timeRange":timeRange //1：日 2：周 3：月 4：最近30天
+              }
+              
+           }).then(function (response) {
+                var dataModel=response.body.model;
+                var _length=dataModel.length;
+                if(type==1){
+                    this.typeData1Info=dataModel.menuItemData;
+                    var tabelName=["销售菜品(道)","同菜系均值"] //图表名称
+                    var dateArray=[],
+                        dataArray=[],
+                        avgArray=[],
+                        dataArrayAll=0,
+                        avgArrayAll=0;
+                    for(var i=0;i<dataModel.statics.length;i++){
+                        dateArray.push(dataModel.statics[i].date);
+                        dataArray.push(dataModel.statics[i].data);
+                        avgArray.push(dataModel.statics[i].avg);
+                        dataArrayAll+=dataModel.statics[i].data;
+                        avgArrayAll+=dataModel.statics[i].avg;
+                    }
+                    if(avgArrayAll!=0 || dataArrayAll!=0){
+                          this.typeData1 = {
+                            title: {
+                              text: ''
+                            },
+                            colors: ['#ffcf00', '#0073ff'],
+                            xAxis: {
+                              categories: dateArray //这个是X轴上的数据展示,
+                            },
+                            yAxis: {
+                              min:1,
+                              startOnTick: false,
+                             tickPosition: 'inside',
+                             lineWidth:0,
+                             labels: {
+                                  align: 'left',
+                                  x: 0,
+                                  y: -2
+                              },
+                              title: {
+                                text: ''
+                              }
+                            },
+                            tooltip: {
+                              pointFormat: '<span style="">{series.name}</span>: '+
+                              '{point.y:,.2f}<br/>',
+                              shared: true,
+                              crosshairs: {
+                                  width: 1,
+                                  color: '#ccc'
+                              },
+                              borderColor: '#ff974c'
+                          },
+                           plotOptions: {
+                              areaspline: {
+                                   fillOpacity: 0.3,
+                              },
+                              series: {//这个是标记数据点的
+                                    marker: {
+                                        radius:3,
+                                        states: {  
+                                            hover: {  
+                                                lineWidth: 1,
+                                                fillColor: '#fff',
+                                                lineWidthPlus: 0
+                                            }  
+                                        }  
+                                    },
+                                    lineWidth:1,
+                                    states: {
+                                        hover: {
+                                            lineWidthPlus: 0
+                                        }
+                                    },
+                                    fillColor: {
+                                          linearGradient: [0, 0, 0, 200],
+                                          stops: [
+                                              [0, Highcharts.getOptions().colors[0]],
+                                              [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                          ]
+                                      }
+                              }
+                          },
+                            credits: {  
+                                enabled: false  
+                            }, 
+                            legend: {
+                              align: 'center',
+                              verticalAlign: 'bottom',
+                              symbolPadding:8,
+                              squareSymbol:false,
+                              symbolHeight:10,
+                              symbolWidth: 10,
+                              symbolRadius:0
+                            },
+                            series:[{
+                              "name": tabelName[type-1],
+                               "type": "spline",
+                              "data": dataArray
+                               }, {
+                               "name": "同菜系均值",
+                               "type": "areaspline",
+                               "data": avgArray
+                            }]
+                        }//图标数据结束
+                   }
+                }else if(type==2){//第二个柱状图
+                    this.isshow2=!this.isshow2;
+                    if(_length>0){
+                      this.status2=1;
+                      var maxfavorCount=dataModel[0].favorCount;
+                      for(var i=0;i<dataModel.length;i++){
+                        if(maxfavorCount<dataModel[i].favorCount){
+                          maxfavorCount=dataModel[i].favorCount
+                        }
+                      }
+                      for(var i=0;i<dataModel.length;i++){
+                        dataModel[i].pencent=((dataModel[i].favorCount/maxfavorCount)*100).toFixed(0)+"%"
+                      }
+                      this.typeData2=dataModel;
+                    }else{
+                      this.status2=0;                          
+                    }
+                }else{//后边3个饼图以及表格
+                  if(_length>0){
+                    this.status=1;
+                    var dataArray=[];
+                    var otherDataPercent=0;
+                    if(_length>3){
+                        for(var i=0;i<3;i++){
+                          (function(i){
+                            dataArray[i] = [dataModel[i].dishName,dataModel[i].proportion];
+                             otherDataPercent += dataModel[i].proportion
+                          })(i)
+                        }
+                        dataArray.push(['其它',1-otherDataPercent]);//其它菜品百分比
+                    }else{
+                        for(var i=0;i<_length;i++){
+                          (function(i){
+                            dataArray[i] = [dataModel[i].dishName,dataModel[i].proportion];
+                             otherDataPercent += dataModel[i].proportion
+                          })(i)
+                        }
+                    }
+                        var dataSet= {
+                           chart: {
+                             height: 220                           
+                            },
+                            colors: ['#58cdcb', '#45b7d4', '#e8e141', '#8bc448'],
+                            credits: {  
+                                enabled: false  
+                            }, 
+                            title: {
+                                text: '',
+                                floating: true,
+                            },
+                            tooltip: {
+                                pointFormat: '<b>{point.percentage:.0f}%</b>'
+                            },
+                            plotOptions: {
+                                pie: {
+                                    dataLabels: {
+                                        format: '<span style="font-weight:normal;color:#444">{point.name}</span>'+'<br/><span style="font-weight:normal;color:#444">{point.percentage:.0f} %</span>'
+                                    }
+                                }
+                            },
+                            series: [{
+                                type: 'pie',
+                                data: dataArray
+                            }]
+                        }
+                  }else{
+                    this.status=0;//暂无数据的情况
+                  }
+                  //结束图表
+                  if(type==3){
+                    this.typeData3=dataSet;
+                    this.evaluatedata3=dataModel;
+                  }
+                  if(type==4){
+                    this.typeData4=dataSet;
+                    this.evaluatedata4=dataModel;
+                  }
+                  if(type==5){
+                    this.typeData5=dataSet;
+                    this.evaluatedata5=dataModel;
+                  }
+              }
+            })
+        },
+        getStoreNameUrl:function(){
+           self.location="baiweiyun://com.operation/changeShop"; 
+        },
+        getStoreNameInner:function(shopGuid,shopName){
+           this.shopName=shopName;
+           this.shopGuid=shopGuid;
+           this.status=1;
+           this.isshow2=false;//隐藏本月菜品数据
+           this.$refs.refclose1.closerank(); //关闭下边3个排行关闭状态
+           this.$refs.refclose2.closerank();
+           this.$refs.refclose3.closerank();
+           this.getDishesData(1,shopGuid,this.startDate,this.endDate,this.timeRange);
+        },
+        getStoreTimeUrl:function(){
+            window.location.href="baiweiyun://com.operation/changeDate?timeRange="+this.timeRange+"&startDate="+this.startDate+"&endDate="+this.endDate; 
+        },
+        getStoreTimeInner:function(startDate,endDate,timeRange){
+          this.startDate=startDate;
+          this.endDate=endDate;
+          this.timeRange=timeRange;
+          switch (parseInt(this.timeRange)) {
+             case 1:  
+              this.timeRangeText="日"
+              break
+             case 2:  
+              this.timeRangeText="周"
+              break
+             case 3:  
+              this.timeRangeText="月"
+              break
+          }
+          this.status=1;
+          this.isshow2=false;//隐藏本月菜品数据
+          this.$refs.refclose1.closerank(); //关闭下边3个排行关闭状态
+          this.$refs.refclose2.closerank();
+          this.$refs.refclose3.closerank();
+          this.getDishesData(1,this.shopGuid,startDate,endDate,timeRange);
+        }
+    }
+})
+function getStoreName(shopGuid,shopName){//修改店铺名称
+  vm.getStoreNameInner(shopGuid,shopName)
+}
+function getStoreTime(startDate,endDate,timeRange){//修改店铺时间
+  vm.getStoreTimeInner(startDate,endDate,timeRange)
+}
+</script>
+</body>
+</html>
